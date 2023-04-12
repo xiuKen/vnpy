@@ -43,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_engine: MainEngine = main_engine
         self.event_engine: EventEngine = event_engine
 
-        self.window_title: str = f"VeighNa Trader 社区版 - {vnpy.__version__}   [{TRADER_DIR}]"
+        self.window_title: str = f"Quant Trader   [{TRADER_DIR}]"
 
         self.widgets: Dict[str, QtWidgets.QWidget] = {}
         self.monitors: Dict[str, BaseMonitor] = {}
@@ -159,21 +159,6 @@ class MainWindow(QtWidgets.QMainWindow):
             "测试邮件",
             get_icon_path(__file__, "email.ico"),
             self.send_test_email
-        )
-
-        self.add_action(
-            help_menu,
-            "社区论坛",
-            get_icon_path(__file__, "forum.ico"),
-            self.open_forum,
-            True
-        )
-
-        self.add_action(
-            help_menu,
-            "关于",
-            get_icon_path(__file__, "about.ico"),
-            partial(self.open_widget, AboutDialog, "about"),
         )
 
     def init_toolbar(self) -> None:
