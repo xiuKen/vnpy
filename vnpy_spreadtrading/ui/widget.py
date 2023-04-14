@@ -8,7 +8,7 @@ from vnpy.event import EventEngine, Event
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.object import LogData
 from vnpy.trader.constant import Direction
-from vnpy.trader.ui import QtWidgets, QtCore, QtGui
+from vnpy.trader.ui import QtWidgets, QtCore, QtGui, QtWebEngineWidgets
 from vnpy.trader.ui.widget import (
     BaseMonitor, BaseCell,
     BidCell, AskCell,
@@ -28,7 +28,7 @@ from ..engine import (
     EVENT_SPREAD_ALGO,
     EVENT_SPREAD_STRATEGY
 )
-
+from plotly import offline
 
 class SpreadManager(QtWidgets.QWidget):
     """"""
@@ -98,6 +98,12 @@ class SpreadManager(QtWidgets.QWidget):
         group.setTitle(title)
 
         return group
+    
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        """
+        Call qwebengineview close function before exit.
+        """
+        self.data_monitor.priceView.close()
 
 
 class SpreadDataMonitor(BaseMonitor):
@@ -125,8 +131,6 @@ class SpreadDataMonitor(BaseMonitor):
         """"""
         super().__init__(main_engine, event_engine)
 
-        self.main_engine: MainEngine = main_engine
-        self.event_engine: EventEngine = event_engine
         self.spread_engine: SpreadEngine = spread_engine
 
         self.init_ui()
@@ -137,8 +141,8 @@ class SpreadDataMonitor(BaseMonitor):
         """
         super().init_ui()
 
-        self.setToolTip("双击单元格停止算法")
-        self.itemDoubleClicked.connect(self.add_spread)
+        self.setToolTip("双击单元格显示历史价差曲线")
+        self.itemDoubleClicked.connect(self.show_spread)
 
     def register_event(self) -> None:
         """
@@ -146,11 +150,14 @@ class SpreadDataMonitor(BaseMonitor):
         """
         super().register_event()
         self.event_engine.register(EVENT_SPREAD_POS, self.signal.emit)
-
-    def add_spread(self) -> None:
+    
+    def show_spread(self, cell: BaseCell) -> None:
         """"""
-        dialog: SpreadDataDialog = SpreadDataDialog(self.spread_engine)
-        dialog.exec_()
+        data = cell.get_data()
+
+        self.priceView: SpreadPriceView = SpreadPriceView(self.spread_engine, data.name)
+        self.priceView.show()
+        
 
 
 class SpreadLogMonitor(QtWidgets.QTextEdit):
@@ -484,7 +491,7 @@ class SpreadStrategyMonitor(QtWidgets.QWidget):
         """"""
         manager: SpreadStrategyWidget = self.managers.pop(strategy_name)
         manager.deleteLater()
-
+        
 
 class SpreadStrategyWidget(QtWidgets.QFrame):
     """
@@ -888,3 +895,43 @@ class SpreadDataDialog(QtWidgets.QDialog):
             return True
         except Exception:
             return False
+
+class SpreadPriceView(QtWebEngineWidgets.QWebEngineView):
+
+    def __init__(self, spread_engine: SpreadEngine, spread_name: str):
+        super().__init__()
+
+        self.spread_engine: SpreadEngine = spread_engine
+        self.spread_name: str = spread_name
+        
+        self.init_ui()
+ 
+    def init_ui(self) -> None:
+
+        self.setWindowTitle("价差曲线图")
+        self.resize(800, 600)
+
+        spread_fig = self.spread_engine.show_spread(self.spread_name)
+
+        # create html code of the figure
+        html = '<html><body>'
+        html += offline.plot(spread_fig, output_type='div', include_plotlyjs='cdn')
+        html += '</body></html>'
+
+        # set the html code
+        self.setHtml(html)
+
+    #     # set the QWebEngineView instance as main widget
+    #     self.setCentralWidget(plot_widget)
+
+    # # def show_graph(self):
+    # #     df = px.data.tips()
+    # #     fig = px.box(df, x="day", y="total_bill", color="smoker")
+    # #     fig.update_traces(quartilemethod="exclusive") # or "inclusive", or "linear" by default
+    # #     self.browser.setHtml(fig.to_html(include_plotlyjs='cdn'))
+
+ 
+ 
+    #     self.temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False)
+    #     self.set_figure(fig)
+

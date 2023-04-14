@@ -6,7 +6,7 @@ from typing import List, Dict, Set, Callable, Any, Optional
 from collections import defaultdict
 from copy import copy
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta 
 
 from vnpy.event import EventEngine, Event
 from vnpy.trader.engine import BaseEngine, MainEngine
@@ -34,6 +34,10 @@ from .base import (
 from .template import SpreadAlgoTemplate, SpreadStrategyTemplate
 from .algo import SpreadTakerAlgo
 
+from pandas import DataFrame
+from plotly.express import line
+from plotly.graph_objects import Figure
+
 
 APP_NAME = "SpreadTrading"
 
@@ -54,6 +58,7 @@ class SpreadEngine(BaseEngine):
         self.add_spread = self.data_engine.add_spread
         self.remove_spread = self.data_engine.remove_spread
         self.get_spread = self.data_engine.get_spread
+        self.show_spread = self.data_engine.show_spread
         self.get_all_spreads = self.data_engine.get_all_spreads
 
         self.start_algo = self.algo_engine.start_algo
@@ -348,6 +353,28 @@ class SpreadDataEngine:
         """"""
         spread: SpreadData = self.spreads.get(name, None)
         return spread
+    
+    def show_spread(self, name: str) -> Figure:
+        """"""
+        if name not in self.spreads:
+            self.write_log("价差历史曲线构建失败，找不到价差{}".format(name))
+            return
+
+        spread: Optional[SpreadData] = self.spread_engine.get_spread(name)
+
+        history_data = load_bar_data(
+            spread,
+            interval=Interval("1m"),
+            start=datetime.today() - timedelta(weeks=25),
+            end=datetime.today() - timedelta(days=1),
+            pricetick=0.2
+        )
+        
+        spread_df = DataFrame([t.__dict__ for t in history_data])
+        print(spread_df)
+
+        price_fig = line(spread_df, x='datetime', y='close_price')
+        return price_fig
 
     def get_all_spreads(self) -> List[SpreadData]:
         """"""

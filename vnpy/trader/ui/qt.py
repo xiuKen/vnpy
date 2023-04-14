@@ -7,7 +7,7 @@ import types
 import threading
 
 import qdarkstyle
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore, QtWebEngineWidgets
 
 from ..setting import SETTINGS
 from ..utility import get_icon_path

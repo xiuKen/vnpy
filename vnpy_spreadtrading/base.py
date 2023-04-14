@@ -405,18 +405,15 @@ def load_bar_data(
 
     # Load bar data of each spread leg
     leg_bars: Dict[str, Dict] = {}
-
     for vt_symbol in spread.legs.keys():
         symbol, exchange = extract_vt_symbol(vt_symbol)
-
         # First, try to query history from database
         bar_data = database.load_bar_data(
             symbol, exchange, interval, start, end
         )
-
         # If failed, query history from datafeed
         if not bar_data:
-
+            print("bar data not find in database, start to query the datafeed")
             bar_data: List[BarData] = query_bar_from_datafeed(
                 symbol, exchange, interval, start, end, output
             )
