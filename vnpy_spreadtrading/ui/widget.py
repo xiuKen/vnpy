@@ -103,7 +103,8 @@ class SpreadManager(QtWidgets.QWidget):
         """
         Call qwebengineview close function before exit.
         """
-        self.data_monitor.priceView.close()
+        if hasattr(self.data_monitor, 'priceView'):
+            self.data_monitor.priceView.close()
 
 
 class SpreadDataMonitor(BaseMonitor):
